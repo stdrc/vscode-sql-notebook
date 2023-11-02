@@ -4,13 +4,24 @@ import * as vscode from 'vscode';
 // Cell block delimiter
 const DELIMITER = '\n\n';
 
+function splitCodeBlocks(raw: string): string[] {
+  const blocks = [];
+  for (const block of raw.split(DELIMITER)) {
+    const trimmed_block = block.trim();
+    if (trimmed_block.length > 0) {
+      blocks.push(trimmed_block);
+    }
+  }
+  return blocks;
+}
+
 export class SQLSerializer implements vscode.NotebookSerializer {
   async deserializeNotebook(
     context: Uint8Array,
     _token: vscode.CancellationToken
   ): Promise<vscode.NotebookData> {
     const str = new TextDecoder().decode(context);
-    const blocks = splitSqlBlocks(str);
+    const blocks = splitCodeBlocks(str);
 
     const cells = blocks.map((query) => {
       const isMarkdown = query.startsWith('/*markdown') && query.endsWith('*/');
@@ -48,19 +59,4 @@ export class SQLSerializer implements vscode.NotebookSerializer {
         .join(DELIMITER)
     );
   }
-}
-
-function splitSqlBlocks(raw: string): string[] {
-  const blocks = [];
-  for (const block of raw.split(DELIMITER)) {
-    if (block.trim().length > 0) {
-      blocks.push(block);
-      continue;
-    }
-    if (blocks.length < 1) {
-      continue;
-    }
-    blocks[blocks.length - 1] += '\n\n';
-  }
-  return blocks;
 }
