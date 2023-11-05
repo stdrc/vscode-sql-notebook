@@ -17,10 +17,10 @@ function splitCodeBlocks(raw: string): string[] {
 
 export class SQLSerializer implements vscode.NotebookSerializer {
   async deserializeNotebook(
-    context: Uint8Array,
+    content: Uint8Array,
     _token: vscode.CancellationToken
   ): Promise<vscode.NotebookData> {
-    const str = new TextDecoder().decode(context);
+    const str = new TextDecoder().decode(content);
     const blocks = splitCodeBlocks(str);
 
     const cells = blocks.map((query) => {
@@ -58,5 +58,36 @@ export class SQLSerializer implements vscode.NotebookSerializer {
         )
         .join(DELIMITER)
     );
+  }
+}
+
+export class SLTSerializer implements vscode.NotebookSerializer {
+  deserializeNotebook(
+    content: Uint8Array,
+    _token: vscode.CancellationToken
+  ): vscode.NotebookData | Thenable<vscode.NotebookData> {
+    const str = new TextDecoder().decode(content);
+    const blocks = splitCodeBlocks(str);
+
+    const cells = blocks.map(block => {
+      const isPureComment = block.split('\n').every(line => line.startsWith('# '));
+
+      return new vscode.NotebookCellData(
+        vscode.NotebookCellKind.Code,
+        block,
+        isPureComment ? 'plaintext' : 'sql' // TODO: `slt` language mode
+      );
+    });
+    return new vscode.NotebookData(cells);
+  }
+
+  serializeNotebook(
+    data: vscode.NotebookData,
+    _token: vscode.CancellationToken
+  ): Uint8Array | Thenable<Uint8Array> {
+    const str = data.cells
+      .map(({ value }) => value)
+      .join(DELIMITER);
+    return new TextEncoder().encode(str + '\n');
   }
 }

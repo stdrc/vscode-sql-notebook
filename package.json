@@ -42,6 +42,19 @@
             "filenamePattern": "*.sql"
           }
         ]
+      },
+      {
+        "type": "slt-notebook",
+        "displayName": "SLT Notebook",
+        "priority": "option",
+        "selector": [
+          {
+            "filenamePattern": "*.slt"
+          },
+          {
+            "filenamePattern": "*.slt.part"
+          }
+        ]
       }
     ],
     "menus": {

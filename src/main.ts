@@ -4,10 +4,11 @@ import { connectToDatabase, deleteConnectionConfiguration } from './commands';
 import { Pool } from './driver';
 import { activateFormProvider } from './form';
 import { SqlLspClient } from './lsp';
-import { SQLSerializer } from './serializer';
+import { SLTSerializer, SQLSerializer } from './serializer';
 import { SQLNotebookController } from './controller';
 
-export const notebookType = 'sql-notebook';
+export const notebookTypeSQL = 'sql-notebook';
+export const notebookTypeSLT = 'slt-notebook';
 export const storageKey = 'sqlnotebook-connections';
 
 export const globalConnPool: { pool: Pool | null } = {
@@ -19,8 +20,14 @@ export const globalLspClient = new SqlLspClient();
 export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.registerNotebookSerializer(
-      notebookType,
+      notebookTypeSQL,
       new SQLSerializer()
+    )
+  );
+  context.subscriptions.push(
+    vscode.workspace.registerNotebookSerializer(
+      notebookTypeSLT,
+      new SLTSerializer()
     )
   );
   const connectionsSidepanel = new SQLNotebookConnections(context);
@@ -47,4 +54,4 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
-export function deactivate() {}
+export function deactivate() { }

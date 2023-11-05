@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import { ExecutionResult } from './driver';
-import { globalConnPool, notebookType } from './main';
+import { globalConnPool, notebookTypeSQL } from './main';
 import { resultToMarkdownTable } from './markdown';
 
 export class SQLNotebookController {
   readonly controllerId = 'sql-notebook-executor';
-  readonly notebookType = notebookType;
+  readonly notebookType = notebookTypeSQL;
   readonly label = 'SQL Notebook';
   readonly supportedLanguages = ['sql'];
 
