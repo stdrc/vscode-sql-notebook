@@ -1,37 +1,42 @@
 import * as vscode from 'vscode';
 import { ExecutionResult } from './driver';
-import { globalConnPool, notebookTypeSQL } from './main';
+import { globalConnPool, notebookTypeSLT, notebookTypeSQL } from './main';
 import { resultToMarkdownTable } from './markdown';
 
-export class SQLNotebookController {
-  readonly controllerId = 'sql-notebook-executor';
-  readonly notebookType = notebookTypeSQL;
-  readonly label = 'SQL Notebook';
-  readonly supportedLanguages = ['sql'];
+const { text, json } = vscode.NotebookCellOutputItem;
 
-  private readonly _controller: vscode.NotebookController;
-  private _executionOrder = 0;
+export class SQLNotebookController {
+  private _sqlExecutionOrder = 0;
+  private _sltExecutionOrder = 0;
 
   constructor() {
-    this._controller = vscode.notebooks.createNotebookController(
-      this.controllerId,
-      this.notebookType,
-      this.label
+    const sqlController = vscode.notebooks.createNotebookController(
+      'sql-notebook-executor',
+      notebookTypeSQL,
+      'SQL Notebook'
     );
+    sqlController.supportedLanguages = ['sql'];
+    sqlController.supportsExecutionOrder = true;
+    sqlController.executeHandler = this._execute.bind(this);
 
-    this._controller.supportedLanguages = this.supportedLanguages;
-    this._controller.supportsExecutionOrder = true;
-    this._controller.executeHandler = this._execute.bind(this);
+    const sltController = vscode.notebooks.createNotebookController(
+      'slt-notebook-executor',
+      notebookTypeSLT,
+      'SLT Notebook'
+    );
+    sltController.supportedLanguages = ['sql']; // TODO: currently we parse slt files to `sql` cells
+    sltController.supportsExecutionOrder = true;
+    sltController.executeHandler = this._execute.bind(this);
   }
 
   private async _execute(
     cells: vscode.NotebookCell[],
-    _notebook: vscode.NotebookDocument,
-    _controller: vscode.NotebookController
+    notebook: vscode.NotebookDocument,
+    controller: vscode.NotebookController
   ): Promise<void> {
     for (let cell of cells) {
       // run each cell sequentially, awaiting its completion
-      await this.doExecution(cell);
+      await this.doExecution(cell, notebook, controller);
     }
   }
 
@@ -39,13 +44,26 @@ export class SQLNotebookController {
     globalConnPool.pool?.end();
   }
 
-  private async doExecution(cell: vscode.NotebookCell): Promise<void> {
-    const execution = this._controller.createNotebookCellExecution(cell);
-    execution.executionOrder = ++this._executionOrder;
+  private async doExecution(
+    cell: vscode.NotebookCell,
+    notebook: vscode.NotebookDocument,
+    controller: vscode.NotebookController
+  ): Promise<void> {
+    const execution = controller.createNotebookCellExecution(cell);
     execution.start(Date.now());
 
-    // this is a sql block
-    const rawQuery = cell.document.getText();
+    if (notebook.notebookType === notebookTypeSQL) {
+      execution.executionOrder = ++this._sqlExecutionOrder;
+    } else if (notebook.notebookType === notebookTypeSLT) {
+      execution.executionOrder = ++this._sltExecutionOrder;
+    } else {
+      console.error(`something strange happened, notebook type: ${notebook.notebookType}`);
+      writeErr(execution, 'Internal error happened');
+      return;
+    }
+
+    const rawQuery = notebook.notebookType === notebookTypeSQL ? cell.document.getText() : parseSLTCell(cell);
+
     if (!globalConnPool.pool) {
       writeErr(
         execution,
@@ -105,12 +123,10 @@ export class SQLNotebookController {
 
 function writeErr(execution: vscode.NotebookCellExecution, err: string) {
   execution.replaceOutput([
-    new vscode.NotebookCellOutput([vscode.NotebookCellOutputItem.text(err)]),
+    new vscode.NotebookCellOutput([text(err)]),
   ]);
   execution.end(false, Date.now());
 }
-
-const { text, json } = vscode.NotebookCellOutputItem;
 
 function writeSuccess(
   execution: vscode.NotebookCellExecution,
@@ -120,6 +136,64 @@ function writeSuccess(
     outputs.map((items) => new vscode.NotebookCellOutput(items))
   );
   execution.end(true, Date.now());
+}
+
+function parseSLTCell(cell: vscode.NotebookCell): string {
+  let queries: string[] = [];
+
+  const lines = cell.document.getText().split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].trim().length === 0) continue;
+    if (lines[i].startsWith('#')) continue;
+
+    let tokens = lines[i].split(/\s+/);
+    if (tokens.length === 0) continue;
+
+    switch (tokens[0]) {
+      case 'statement': {
+        let query = '';
+        while (i + 1 < lines.length && lines[i + 1].length > 0) {
+          query += lines[i + 1];
+          ++i;
+        }
+        if (!query.trimEnd().endsWith(';')) {
+          query += ';'
+        }
+        queries.push(query);
+        break;
+      }
+      case 'query': {
+        let query = '';
+        while (i + 1 < lines.length && lines[i + 1].length > 0 && lines[i + 1] !== '----') {
+          query += lines[i + 1];
+          ++i;
+        }
+        if (!query.trimEnd().endsWith(';')) {
+          query += ';'
+        }
+        queries.push(query);
+        break;
+      }
+      case 'include':
+      case 'halt':
+      case 'subtest':
+      case 'sleep':
+      case 'skipif':
+      case 'onlyif':
+      case 'connection':
+      case 'system':
+      case 'control':
+      case 'hash-threshold': {
+        console.warn(`ignored sqllogictest command \`${tokens.join(' ')}\``);
+        break;
+      }
+      default: {
+        console.error(`unrecognized sqllogictest command \`${tokens.join(' ')}`);
+      }
+    }
+  }
+
+  return queries.join('\n');
 }
 
 function outputJsonMimeType(): boolean {
