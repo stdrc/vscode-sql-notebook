@@ -5,6 +5,8 @@
 [![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/cmoog.sqlnotebook)](https://marketplace.visualstudio.com/items?itemName=cmoog.sqlnotebook)
 [![GitHub Release](https://img.shields.io/github/v/release/cmoog/vscode-sql-notebook?color=6b9ded&include_prerelease=false)](https://github.com/cmoog/vscode-sql-notebook/releases)
 
+**NOTE: This is a fork of [cmoog/vscode-sql-notebook](https://github.com/cmoog/vscode-sql-notebook), just with some extended features for personal use. See [Extended Features](#extended-features) for details. Please use this extension with caution.**
+
 Open SQL files in the VS Code Notebook interface. Execute query blocks
 and view output interactively.
 
@@ -17,6 +19,11 @@ and view output interactively.
 - Configure database connections in the SQL Notebook side-panel.
 - Supports MySQL, PostgreSQL, SQLite, and MSSQL (OracleDB support coming soon).
 - (unstable) Built-in typed auto-complete with an embedded language server.
+
+## Extended Features
+
+- Display SQL output in monospace font, so that explain strings can have a nicer look.
+- Support `.slt` and `.slt.part` files. For SLT files, currently you can only run SQL queries extracted from SLT syntax, rather than doing fully-functioned SQL Logic Test.
 
 ## Usage
 
