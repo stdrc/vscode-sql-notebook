@@ -1,13 +1,13 @@
 {
-  "name": "sqlnotebook",
-  "displayName": "SQL Notebook",
-  "publisher": "cmoog",
-  "description": "View SQL files as notebooks. Execute cells and view query output.",
+  "name": "sqlnotebook-extended",
+  "displayName": "SQL Notebook Extended",
+  "publisher": "richardchien",
+  "description": "View SQL files as notebooks. Execute cells and view query output. This is a fork of SQL Notebook, just with some modification and features for personal use.",
   "icon": "media/logo128.png",
   "repository": {
-    "url": "https://github.com/cmoog/vscode-sql-notebook"
+    "url": "https://github.com/stdrc/vscode-sql-notebook"
   },
-  "version": "0.7.0",
+  "version": "0.8.0",
   "preview": false,
   "engines": {
     "vscode": "^1.59.0"
