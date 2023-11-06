@@ -2,12 +2,12 @@
   "name": "sqlnotebook-extended",
   "displayName": "SQL Notebook Extended",
   "publisher": "richardchien",
-  "description": "View SQL files as notebooks. Execute cells and view query output. This is a fork of SQL Notebook, just with some modification and features for personal use.",
+  "description": "View SQL files as notebooks. Execute cells and view query output.",
   "icon": "media/logo128.png",
   "repository": {
     "url": "https://github.com/stdrc/vscode-sql-notebook"
   },
-  "version": "0.8.0",
+  "version": "0.8.1",
   "preview": false,
   "engines": {
     "vscode": "^1.59.0"
