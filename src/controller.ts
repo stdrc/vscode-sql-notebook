@@ -151,24 +151,26 @@ function parseSLTCell(cell: vscode.NotebookCell): string {
 
     switch (tokens[0]) {
       case 'statement': {
-        let query = '';
+        let query_lines = [];
         while (i + 1 < lines.length && lines[i + 1].length > 0) {
-          query += lines[i + 1];
+          query_lines.push(lines[i + 1].trim());
           ++i;
         }
-        if (!query.trimEnd().endsWith(';')) {
+        let query = query_lines.join(' ');
+        if (!query.endsWith(';')) {
           query += ';'
         }
         queries.push(query);
         break;
       }
       case 'query': {
-        let query = '';
+        let query_lines = [];
         while (i + 1 < lines.length && lines[i + 1].length > 0 && lines[i + 1] !== '----') {
-          query += lines[i + 1];
+          query_lines.push(lines[i + 1].trim());
           ++i;
         }
-        if (!query.trimEnd().endsWith(';')) {
+        let query = query_lines.join(' ');
+        if (!query.endsWith(';')) {
           query += ';'
         }
         queries.push(query);
